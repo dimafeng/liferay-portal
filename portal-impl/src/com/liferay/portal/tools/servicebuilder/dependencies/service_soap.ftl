@@ -78,7 +78,7 @@ public class ${entity.name}ServiceSoap {
 
 			<#if returnValueName == extendedModelName>
 				${soapModelName}${returnValueDimension}
-			<#elseif stringUtil.startsWith(returnValueName, packagePath + ".model.") && serviceBuilder.hasEntityByGenericsName(returnValueName)>
+			<#elseif (stringUtil.startsWith(returnValueName, packagePath + ".model.") || stringUtil.startsWith(returnValueName, "com.liferay.portal.model.")) && serviceBuilder.hasEntityByGenericsName(returnValueName)>
 				${returnValueName}Soap${returnValueDimension}
 			<#elseif stringUtil.startsWith(returnValueName, "com.liferay.portal.kernel.json.JSON")>
 				java.lang.String
@@ -105,6 +105,8 @@ public class ${entity.name}ServiceSoap {
 					com.liferay.portal.kernel.repository.model.FolderSoap[]
 				<#elseif entity.hasColumns() && serviceBuilder.hasEntityByGenericsName(serviceBuilder.getListActualTypeArguments(method.getReturns()))>
 					${soapModelName}[]
+				<#elseif stringUtil.startsWith(returnTypeGenericsName,"java.util.List<com.liferay.portal.model.")>
+					${serviceBuilder.getListActualTypeArguments(method.getReturns())}Soap[]
 				<#else>
 					${serviceBuilder.getListActualTypeArguments(method.getReturns())}[]
 				</#if>
@@ -124,11 +126,11 @@ public class ${entity.name}ServiceSoap {
 					<#assign parameterTypeName = "String">
 				<#elseif parameterTypeName == "java.util.List<java.lang.Long>">
 					<#assign parameterTypeName = "Long[]">
-				<#elseif (parameter.type.value == "java.util.List") && serviceBuilder.hasEntityByGenericsName(parameterListActualType)>
+				<#elseif (parameter.type.value == "java.util.List") && (serviceBuilder.hasEntityByGenericsName(parameterListActualType) || stringUtil.startsWith(parameterListActualType, "com.liferay.portal.model."))>
 					<#assign parameterEntity = serviceBuilder.getEntityByGenericsName(parameterListActualType)>
 
 					<#assign parameterTypeName = parameterEntity.packagePath + ".model." + parameterEntity.name + "Soap[]">
-				<#elseif serviceBuilder.hasEntityByParameterTypeValue(parameter.type.value)>
+				<#elseif (serviceBuilder.hasEntityByParameterTypeValue(parameter.type.value) || stringUtil.startsWith(parameter.type.value, "com.liferay.portal.model."))>
 					<#assign parameterEntity = serviceBuilder.getEntityByParameterTypeValue(parameter.type.value)>
 
 					<#assign parameterTypeName = parameterEntity.packagePath + ".model." + parameterEntity.name + "Soap">
@@ -209,7 +211,7 @@ public class ${entity.name}ServiceSoap {
 							</#if>
 						<#elseif stringUtil.startsWith(returnValueName, "com.liferay.portal.kernel.json.JSON")>
 							return returnValue.toString();
-						<#elseif stringUtil.startsWith(returnValueName, "com.liferay.portal.kernel.repository.model.")>
+						<#elseif (stringUtil.startsWith(returnValueName, "com.liferay.portal.kernel.repository.model.") || stringUtil.startsWith(returnValueName, "com.liferay.portal.model."))>
 							return ${returnValueName}Soap.toSoapModel(returnValue);
 						<#elseif returnValueName == "java.util.List">
 							<#if returnTypeGenericsName == "java.util.List<java.lang.Boolean>">
@@ -230,6 +232,8 @@ public class ${entity.name}ServiceSoap {
 								return com.liferay.portal.kernel.repository.model.FileEntrySoap.toSoapModels(returnValue);
 							<#elseif returnTypeGenericsName == "java.util.List<com.liferay.portal.kernel.repository.model.Folder>">
 								return com.liferay.portal.kernel.repository.model.FolderSoap.toSoapModels(returnValue);
+							<#elseif stringUtil.startsWith(serviceBuilder.getListActualTypeArguments(method.getReturns()), "com.liferay.portal.model.")>
+								return ${serviceBuilder.getListActualTypeArguments(method.getReturns())}Soap.toSoapModels(returnValue);
 							<#elseif entity.hasColumns() && serviceBuilder.hasEntityByGenericsName(serviceBuilder.getListActualTypeArguments(method.getReturns()))>
 								return ${soapModelName}.toSoapModels(returnValue);
 							<#else>
